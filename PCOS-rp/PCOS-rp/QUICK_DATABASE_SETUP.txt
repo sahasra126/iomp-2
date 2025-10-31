@@ -1,0 +1,65 @@
+╔══════════════════════════════════════════════════════════════╗
+║                    DATABASE SETUP - QUICK START              ║
+╚══════════════════════════════════════════════════════════════╝
+
+📋 WHAT YOU NEED:
+   ✓ PostgreSQL installed and running
+   ✓ This file: database_setup.sql (in same folder)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🚀 QUICKEST METHOD (Copy-paste this command):
+
+   psql -U postgres -f database_setup.sql
+
+   That's it! Everything will be created automatically.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📋 WHAT GETS CREATED:
+
+   ✓ Database: pcos_db
+   ✓ Table: users (login accounts)
+   ✓ Table: user_profiles (health info)
+   ✓ Table: symptom_logs (daily tracking)
+   ✓ Table: lifestyle_predictions (assessments)
+   ✓ Table: predictions (clinical results)
+   ✓ Table: cycle_info (period tracking)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🔍 VERIFY IT WORKED:
+
+   psql -U postgres -d pcos_db -c "\dt"
+
+   You should see all 6 tables listed.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📖 NEED MORE HELP?
+
+   See: DATABASE_SETUP_INSTRUCTIONS.md (detailed guide)
+   See: README.md (full setup instructions)
+   See: SETUP_CHECKLIST.md (step-by-step checklist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+💡 USING pgAdmin INSTEAD?
+
+   1. Open pgAdmin
+   2. Connect to PostgreSQL server
+   3. Tools → Query Tool
+   4. File → Open → Select "database_setup.sql"
+   5. Click Execute (⚡ icon or F5)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+✨ After database setup:
+   → Configure backend/.env file
+   → Start backend: python app.py
+   → Start frontend: npm start
+   → Visit: http://localhost:3000
+
+╔══════════════════════════════════════════════════════════════╗
+║                    You're all set! 🎉                        ║
+╚══════════════════════════════════════════════════════════════╝
