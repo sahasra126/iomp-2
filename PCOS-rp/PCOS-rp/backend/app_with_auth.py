@@ -451,7 +451,10 @@ import jwt
 from functools import wraps
 
 app = Flask(__name__)
-CORS(app, supports_credentials=True, origins=["http://localhost:3000"])
+# Enable CORS for testing. Replace "*" with your Vercel URL in production.
+from flask_cors import CORS
+CORS(app, origins="*", supports_credentials=True)
+
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'your-secret-key-change-this')
 
 # Database Configuration
@@ -462,6 +465,25 @@ DB_CONFIG = {
     'password': os.environ.get('DB_PASSWORD', 'postgres'),
     'port': os.environ.get('DB_PORT', '5432')
 }
+# If Render (or any host) provides a single DATABASE_URL, use it.
+# Example DATABASE_URL: postgres://user:pass@host:5432/dbname
+DATABASE_URL = os.environ.get("DATABASE_URL")
+if DATABASE_URL:
+    try:
+        # parse without extra dependency
+        from urllib.parse import urlparse, unquote
+        url = urlparse(DATABASE_URL)
+        DB_CONFIG = {
+            'host': url.hostname,
+            'database': url.path.lstrip('/'),
+            'user': unquote(url.username) if url.username else None,
+            'password': unquote(url.password) if url.password else None,
+            'port': str(url.port) if url.port else '5432'
+        }
+        print("Using DATABASE_URL from env for DB connection")
+    except Exception as e:
+        print("Failed to parse DATABASE_URL:", e)
+
 
 # Load Model, Scaler and Features
 try:
