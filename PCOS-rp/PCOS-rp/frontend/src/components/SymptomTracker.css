@@ -1,0 +1,375 @@
+.symptom-tracker-container {
+  min-height: calc(100vh - 80px);
+  background: linear-gradient(135deg, #ffeef8 0%, #fff5f7 100%);
+  padding: 40px 20px;
+}
+
+.tracker-header {
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+.tracker-header h1 {
+  font-size: 2.5rem;
+  color: #ff6b9d;
+  margin-bottom: 10px;
+}
+
+.tracker-header p {
+  color: #666;
+  font-size: 1.1rem;
+}
+
+.tracker-content {
+  max-width: 1400px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 30px;
+}
+
+.section-card {
+  background: white;
+  border-radius: 20px;
+  padding: 30px;
+  box-shadow: 0 4px 20px rgba(255, 107, 157, 0.1);
+}
+
+.section-card h3 {
+  font-size: 1.5rem;
+  color: #333;
+  margin-bottom: 20px;
+}
+
+/* Calendar Styles */
+.calendar {
+  width: 100%;
+}
+
+.calendar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.calendar-header button {
+  background: #ff6b9d;
+  color: white;
+  border: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.3s;
+}
+
+.calendar-header button:hover {
+  background: #ff4d88;
+}
+
+.calendar-header span {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #333;
+}
+
+.calendar-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.weekday {
+  text-align: center;
+  font-weight: 600;
+  color: #666;
+  padding: 10px 0;
+}
+
+.calendar-days {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 10px;
+}
+
+.calendar-day {
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s;
+  font-weight: 500;
+}
+
+.calendar-day.current {
+  color: #333;
+}
+
+.calendar-day.other {
+  color: #ccc;
+}
+
+.calendar-day.today {
+  background: #4ecca3;
+  color: white;
+  font-weight: 700;
+}
+
+.calendar-day:hover.current {
+  background: #ffe5f0;
+}
+
+.calendar-legend {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 2px solid #f0f0f0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.legend-dot {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+}
+
+.legend-dot.period {
+  background: #ff6b9d;
+}
+
+.legend-dot.ovulation {
+  background: #4ecca3;
+}
+
+.legend-dot.fertile {
+  background: #ffccd5;
+}
+
+/* Flow Section */
+.flow-section {
+  padding: 20px 0;
+}
+
+.flow-label {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 15px;
+}
+
+.flow-slider-container {
+  position: relative;
+}
+
+.flow-slider {
+  width: 100%;
+  height: 8px;
+  border-radius: 10px;
+  background: linear-gradient(to right, #4ecca3 0%, #4ecca3 33%, #ffa07a 66%, #ff6b9d 100%);
+  outline: none;
+  -webkit-appearance: none;
+  margin-bottom: 10px;
+}
+
+.flow-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: white;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  border: 3px solid #ff6b9d;
+}
+
+.flow-slider::-moz-range-thumb {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: white;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  border: 3px solid #ff6b9d;
+}
+
+.flow-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.9rem;
+  color: #666;
+}
+
+/* Symptoms Grid */
+.symptoms-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 15px;
+}
+
+.symptom-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 15px;
+  background: #f8f9fa;
+  border-radius: 12px;
+  transition: all 0.3s;
+}
+
+.symptom-item:hover {
+  background: #ffe5f0;
+}
+
+.symptom-icon {
+  font-size: 1.5rem;
+}
+
+.symptom-label {
+  flex: 1;
+  font-weight: 500;
+  color: #333;
+}
+
+/* Toggle Switch */
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 50px;
+  height: 26px;
+}
+
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggle-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  transition: 0.4s;
+  border-radius: 34px;
+}
+
+.toggle-slider:before {
+  position: absolute;
+  content: "";
+  height: 20px;
+  width: 20px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: 0.4s;
+  border-radius: 50%;
+}
+
+input:checked + .toggle-slider {
+  background-color: #ff6b9d;
+}
+
+input:checked + .toggle-slider:before {
+  transform: translateX(24px);
+}
+
+/* Save Button */
+.save-button {
+  width: 100%;
+  padding: 15px;
+  background: linear-gradient(135deg, #ff6b9d 0%, #ff4d88 100%);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+  margin-top: 20px;
+}
+
+.save-button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(255, 107, 157, 0.4);
+}
+
+.save-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Message Box */
+.message-box {
+  padding: 15px 20px;
+  border-radius: 12px;
+  font-weight: 600;
+  text-align: center;
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.message-box.success {
+  background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
+  color: white;
+}
+
+.message-box.error {
+  background: linear-gradient(135deg, #ef4444 0%, #f87171 100%);
+  color: white;
+}
+
+.right-section {
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+}
+
+/* Responsive */
+@media (max-width: 968px) {
+  .tracker-content {
+    grid-template-columns: 1fr;
+  }
+
+  .symptoms-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .tracker-header h1 {
+    font-size: 2rem;
+  }
+
+  .section-card {
+    padding: 20px;
+  }
+}

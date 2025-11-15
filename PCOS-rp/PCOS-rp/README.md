@@ -12,7 +12,17 @@ A comprehensive PCOS (Polycystic Ovary Syndrome) prediction and tracking applica
 
 ---
 
-## 📋 Prerequisites
+## � Quick Links
+
+- **🚀 [Quick Deploy Guide](QUICK_DEPLOY.md)** - Deploy to cloud in 15 minutes
+- **📖 [Full Deployment Guide](DEPLOYMENT_GUIDE.md)** - Detailed deployment instructions
+- **✅ [Setup Checklist](SETUP_CHECKLIST.md)** - Step-by-step local setup
+- **🗄️ [Database Setup](DATABASE_SETUP_INSTRUCTIONS.md)** - Database configuration help
+- **📦 [Sharing Guide](HOW_TO_SHARE.md)** - How to share this project
+
+---
+
+## �📋 Prerequisites
 
 Before you begin, ensure you have the following installed:
 
