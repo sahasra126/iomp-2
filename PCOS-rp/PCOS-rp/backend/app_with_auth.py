@@ -283,6 +283,38 @@ def login():
         token = token.decode('utf-8')
 
     return jsonify({"message": "Login successful", "token": token}), 200
+@app.route("/auth/me", methods=["GET"])
+@token_required
+def get_current_user(user_id):
+    """
+    Return basic info about the currently authenticated user.
+    Frontend should call this with Authorization: Bearer <token>
+    """
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({"error": "Database not connected"}), 500
+
+    try:
+        cur = conn.cursor(cursor_factory=RealDictCursor)
+        cur.execute("SELECT id, email, full_name, created_at, last_login FROM users WHERE id=%s", (user_id,))
+        user = cur.fetchone()
+        cur.close()
+        conn.close()
+    except Exception as e:
+        app.logger.exception("auth/me DB error")
+        return jsonify({"error": "Failed to fetch user"}), 500
+
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+
+    return jsonify({
+        "id": user["id"],
+        "email": user["email"],
+        "full_name": user.get("full_name"),
+        "created_at": user.get("created_at"),
+        "last_login": user.get("last_login")
+    }), 200
+
 
 @app.route("/predict", methods=["POST"])
 @token_required
