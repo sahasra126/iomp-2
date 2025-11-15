@@ -1,10 +1,75 @@
+# services:
+#   # PostgreSQL Database
+#   - type: pserv
+#     name: pcos-database
+#     env: docker
+#     plan: free
+    
+#   # Backend API
+#   - type: web
+#     name: pcos-backend
+#     env: python
+#     region: oregon
+#     plan: free
+#     buildCommand: cd backend && pip install -r requirements.txt
+#     startCommand: cd backend && gunicorn app:app --bind 0.0.0.0:$PORT
+#     envVars:
+#       - key: PYTHON_VERSION
+#         value: 3.11.0
+#       - key: SECRET_KEY
+#         generateValue: true
+#       - key: DB_HOST
+#         fromDatabase:
+#           name: pcos-database
+#           property: host
+#       - key: DB_NAME
+#         fromDatabase:
+#           name: pcos-database
+#           property: database
+#       - key: DB_USER
+#         fromDatabase:
+#           name: pcos-database
+#           property: user
+#       - key: DB_PASSWORD
+#         fromDatabase:
+#           name: pcos-database
+#           property: password
+#       - key: DB_PORT
+#         fromDatabase:
+#           name: pcos-database
+#           property: port
+#       - key: FLASK_ENV
+#         value: production
+#     healthCheckPath: /health
+
+#   # Frontend (React)
+#   - type: web
+#     name: pcos-frontend
+#     env: static
+#     region: oregon
+#     plan: free
+#     buildCommand: cd frontend && npm install && npm run build
+#     staticPublishPath: frontend/build
+#     routes:
+#       - type: rewrite
+#         source: /*
+#         destination: /index.html
+#     envVars:
+#       - key: REACT_APP_API_URL
+#         value: https://pcos-backend.onrender.com  # Update this after backend is deployed
+
+# databases:
+#   - name: pcos-database
+#     databaseName: pcos_db
+#     user: pcos_user
+#     plan: free
 services:
-  # PostgreSQL Database
+  # PostgreSQL Database (existing Render database reference)
   - type: pserv
     name: pcos-database
     env: docker
     plan: free
-    
+
   # Backend API
   - type: web
     name: pcos-backend
@@ -42,11 +107,10 @@ services:
         value: production
     healthCheckPath: /health
 
-  # Frontend (React)
+  # Frontend (React) — NOTE: region removed (static sites cannot have region)
   - type: web
     name: pcos-frontend
     env: static
-    region: oregon
     plan: free
     buildCommand: cd frontend && npm install && npm run build
     staticPublishPath: frontend/build
@@ -56,10 +120,5 @@ services:
         destination: /index.html
     envVars:
       - key: REACT_APP_API_URL
-        value: https://pcos-backend.onrender.com  # Update this after backend is deployed
+        value: https://pcos-backend.onrender.com  # Update later if needed
 
-databases:
-  - name: pcos-database
-    databaseName: pcos_db
-    user: pcos_user
-    plan: free
