@@ -1,7 +1,23 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import API_BASE_URL from '../config';
 
+console.log("API_BASE_URL =", API_BASE_URL);
+
 const AuthContext = createContext(null);
+
+async function safeParseJson(response) {
+  const contentType = response.headers.get("content-type") || "";
+  if (contentType.includes("application/json")) {
+    return await response.json();
+  }
+  try {
+    // try json anyway
+    return await response.json();
+  } catch {
+    const text = await response.text();
+    return { error: text || `HTTP ${response.status}` };
+  }
+}
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
@@ -25,7 +41,7 @@ export const AuthProvider = ({ children }) => {
       });
 
       if (response.ok) {
-        const data = await response.json();
+        const data = await safeParseJson(response);
         setUser(data.user);
       } else {
         logout();
@@ -48,7 +64,7 @@ export const AuthProvider = ({ children }) => {
         body: JSON.stringify({ email, password })
       });
 
-      const data = await response.json();
+      const data = await safeParseJson(response);
 
       if (response.ok) {
         localStorage.setItem('token', data.token);
@@ -56,7 +72,8 @@ export const AuthProvider = ({ children }) => {
         setUser(data.user);
         return { success: true };
       } else {
-        return { success: false, error: data.error };
+        const err = data?.error || data?.message || `HTTP ${response.status}`;
+        return { success: false, error: err };
       }
     } catch (error) {
       return { success: false, error: 'Network error. Please try again.' };
@@ -78,7 +95,7 @@ export const AuthProvider = ({ children }) => {
         })
       });
 
-      const data = await response.json();
+      const data = await safeParseJson(response);
 
       if (response.ok) {
         localStorage.setItem('token', data.token);
@@ -86,7 +103,8 @@ export const AuthProvider = ({ children }) => {
         setUser(data.user);
         return { success: true };
       } else {
-        return { success: false, error: data.error };
+        const err = data?.error || data?.message || `HTTP ${response.status}`;
+        return { success: false, error: err };
       }
     } catch (error) {
       return { success: false, error: 'Network error. Please try again.' };
