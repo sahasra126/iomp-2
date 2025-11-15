@@ -1,133 +1,108 @@
-import React, { createContext, useState, useContext, useEffect } from 'react';
-import API_BASE_URL from '../config';
+// context/AuthContext.jsx
+import React, { createContext, useContext, useState, useEffect } from 'react';
 
-console.log("API_BASE_URL =", API_BASE_URL);
+const AuthContext = createContext();
+export const useAuth = () => useContext(AuthContext);
 
-const AuthContext = createContext(null);
-
-async function safeParseJson(response) {
-  const contentType = response.headers.get("content-type") || "";
-  if (contentType.includes("application/json")) {
-    return await response.json();
-  }
-  try {
-    // try json anyway
-    return await response.json();
-  } catch {
-    const text = await response.text();
-    return { error: text || `HTTP ${response.status}` };
-  }
-}
+// Set API base (use env var in production)
+const API_BASE = process.env.REACT_APP_API_URL || 'https://pcos-backend-krz0.onrender.com';
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [token, setToken] = useState(localStorage.getItem('token'));
-  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState(null); // user object from /auth/me
+  const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    if (token) {
-      fetchCurrentUser();
-    } else {
-      setLoading(false);
-    }
-  }, [token]);
-
-  const fetchCurrentUser = async () => {
+  // Validate token and fetch user
+  const fetchCurrentUser = async (token) => {
+    if (!token) return null;
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/me`, {
+      const res = await fetch(`${API_BASE}/auth/me`, {
+        method: 'GET',
         headers: {
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json'
         }
       });
+      // debug helpful logs (remove in prod)
+      console.log('[Auth] fetchCurrentUser status', res.status);
 
-      if (response.ok) {
-        const data = await safeParseJson(response);
-        setUser(data.user);
-      } else {
-        logout();
+      if (!res.ok) {
+        localStorage.removeItem('pcos_token');
+        setUser(null);
+        return null;
       }
-    } catch (error) {
-      console.error('Error fetching user:', error);
-      logout();
+      const data = await res.json().catch(() => null);
+      if (data) {
+        setUser(data);
+        return data;
+      } else {
+        setUser(null);
+        return null;
+      }
+    } catch (err) {
+      console.error('[Auth] fetchCurrentUser error', err);
+      setUser(null);
+      return null;
+    }
+  };
+
+  // Restore token on startup and validate
+  useEffect(() => {
+    const token = localStorage.getItem('pcos_token');
+    if (token) fetchCurrentUser(token);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // login: call backend, store token, validate, set user
+  const login = async (email, password) => {
+    setLoading(true);
+    try {
+      const res = await fetch(`${API_BASE}/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: (email || '').trim().toLowerCase(), password })
+      });
+
+      console.log('[Auth] login status', res.status);
+
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        const message = data.error || data.message || `Login failed (${res.status})`;
+        return { success: false, error: message };
+      }
+
+      const token = data?.token;
+      if (!token) {
+        return { success: false, error: 'No token returned from server' };
+      }
+
+      // Save token (string) and validate it by calling /auth/me
+      localStorage.setItem('pcos_token', token);
+      const userObj = await fetchCurrentUser(token);
+
+      if (!userObj) {
+        // cleanup if validation fails
+        localStorage.removeItem('pcos_token');
+        return { success: false, error: 'Token validation failed' };
+      }
+
+      return { success: true };
+    } catch (err) {
+      console.error('[Auth] login error', err);
+      return { success: false, error: err.message || 'Network error' };
     } finally {
       setLoading(false);
     }
   };
 
-  const login = async (email, password) => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/auth/login`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ email, password })
-      });
-
-      const data = await safeParseJson(response);
-
-      if (response.ok) {
-        localStorage.setItem('token', data.token);
-        setToken(data.token);
-        setUser(data.user);
-        return { success: true };
-      } else {
-        const err = data?.error || data?.message || `HTTP ${response.status}`;
-        return { success: false, error: err };
-      }
-    } catch (error) {
-      return { success: false, error: 'Network error. Please try again.' };
-    }
-  };
-
-  const register = async (email, password, fullName, age) => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/auth/register`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ 
-          email, 
-          password, 
-          full_name: fullName,
-          age: age ? parseInt(age) : null
-        })
-      });
-
-      const data = await safeParseJson(response);
-
-      if (response.ok) {
-        localStorage.setItem('token', data.token);
-        setToken(data.token);
-        setUser(data.user);
-        return { success: true };
-      } else {
-        const err = data?.error || data?.message || `HTTP ${response.status}`;
-        return { success: false, error: err };
-      }
-    } catch (error) {
-      return { success: false, error: 'Network error. Please try again.' };
-    }
-  };
-
   const logout = () => {
-    localStorage.removeItem('token');
-    setToken(null);
+    localStorage.removeItem('pcos_token');
     setUser(null);
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, login, register, logout, loading }}>
+    <AuthContext.Provider value={{ user, login, logout, loading }}>
       {children}
     </AuthContext.Provider>
   );
-};
-
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
 };
