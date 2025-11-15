@@ -9,11 +9,14 @@ const API_BASE = process.env.REACT_APP_API_URL || 'https://pcos-backend-krz0.onr
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null); // user object from /auth/me
-  const [loading, setLoading] = useState(false);
+  const [token, setToken] = useState(null); // store raw token for headers
+  const [loading, setLoading] = useState(true); // start true until we check local token
 
   // Validate token and fetch user
-  const fetchCurrentUser = async (token) => {
-    if (!token) {
+  const fetchCurrentUser = async (t) => {
+    if (!t) {
+      setUser(null);
+      setToken(null);
       return null;
     }
 
@@ -22,29 +25,34 @@ export const AuthProvider = ({ children }) => {
       const res = await fetch(`${API_BASE}/auth/me`, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${token}`,
+          'Authorization': `Bearer ${t}`,
           'Accept': 'application/json'
         }
       });
-      // debug helpful logs (remove in prod)
       console.log('[Auth] fetchCurrentUser status', res.status);
 
       if (!res.ok) {
+        // invalid token or other issue
         localStorage.removeItem('pcos_token');
         setUser(null);
+        setToken(null);
         return null;
       }
+
       const data = await res.json().catch(() => null);
       if (data) {
         setUser(data);
+        setToken(t);
         return data;
       } else {
         setUser(null);
+        setToken(null);
         return null;
       }
     } catch (err) {
       console.error('[Auth] fetchCurrentUser error', err);
       setUser(null);
+      setToken(null);
       return null;
     } finally {
       setLoading(false); // validation finished
@@ -54,11 +62,10 @@ export const AuthProvider = ({ children }) => {
   // Restore token on startup and validate
   useEffect(() => {
     (async () => {
-      const token = localStorage.getItem('pcos_token');
-      if (token) {
-        await fetchCurrentUser(token);
+      const stored = localStorage.getItem('pcos_token');
+      if (stored) {
+        await fetchCurrentUser(stored);
       } else {
-        // ensure loading is false when there's no token
         setLoading(false);
       }
     })();
@@ -84,18 +91,19 @@ export const AuthProvider = ({ children }) => {
         return { success: false, error: message };
       }
 
-      const token = data?.token;
-      if (!token) {
+      const t = data?.token;
+      if (!t) {
         return { success: false, error: 'No token returned from server' };
       }
 
-      // Save token (string) and validate it by calling /auth/me
-      localStorage.setItem('pcos_token', token);
-      const userObj = await fetchCurrentUser(token);
+      // Save token and validate it by calling /auth/me
+      localStorage.setItem('pcos_token', t);
+      const userObj = await fetchCurrentUser(t);
 
       if (!userObj) {
         // cleanup if validation fails
         localStorage.removeItem('pcos_token');
+        setToken(null);
         return { success: false, error: 'Token validation failed' };
       }
 
@@ -110,11 +118,12 @@ export const AuthProvider = ({ children }) => {
 
   const logout = () => {
     localStorage.removeItem('pcos_token');
+    setToken(null);
     setUser(null);
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, loading }}>
+    <AuthContext.Provider value={{ user, token, login, logout, loading }}>
       {children}
     </AuthContext.Provider>
   );
