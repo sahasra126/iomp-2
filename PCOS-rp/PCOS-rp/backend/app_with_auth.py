@@ -405,6 +405,231 @@ def health():
         "feature_count": len(feature_names),
         "database_connected": db_connected
     })
+# ---------- Paste AFTER your /auth/me route (remove old /predictions/history) ----------
+
+# Ensure a symptom_logs table exists (call once at startup)
+def ensure_symptom_logs_table():
+    conn = get_db_connection()
+    if not conn:
+        return
+    try:
+        cur = conn.cursor()
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS symptom_logs (
+                id SERIAL PRIMARY KEY,
+                user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+                log_data JSONB,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+        conn.commit()
+        cur.close()
+        conn.close()
+    except Exception as e:
+        print("ensure_symptom_logs_table error:", e)
+
+# Try to create symptom_logs table at startup (non-fatal)
+try:
+    ensure_symptom_logs_table()
+except Exception as e:
+    print("Warning: ensure_symptom_logs_table failed:", e)
+
+
+# Lifestyle assessment endpoint
+@app.route("/lifestyle/assess", methods=["POST"])
+@token_required
+def lifestyle_assess(user_id):
+    """
+    Accepts lifestyle assessment payload and returns:
+    { risk_level, probability, confidence, prediction_text, recommendations, input }
+    Minimal rule-based stub — replace with your real logic later.
+    """
+    data = request.json or {}
+
+    # Basic stub scoring (replace with your model)
+    prob = 0.05
+    try:
+        BMI = float(data.get("BMI", 0) or 0)
+    except:
+        BMI = 0
+    try:
+        exercise = float(data.get("ExerciseFrequency", 0) or 0)
+    except:
+        exercise = 0
+    try:
+        hirsutism = int(data.get("Hirsutism", 0) or 0)
+    except:
+        hirsutism = 0
+
+    if BMI >= 30:
+        prob += 0.28
+    elif BMI >= 25:
+        prob += 0.12
+
+    if hirsutism >= 2:
+        prob += 0.14
+
+    if exercise < 2:
+        prob += 0.08
+
+    # clamp
+    prob = min(max(prob, 0.0), 0.99)
+
+    if prob < 0.3:
+        risk_level = "Low"
+    elif prob < 0.7:
+        risk_level = "Moderate"
+    else:
+        risk_level = "High"
+
+    recommendations = [
+        {
+            "category": "Lifestyle",
+            "priority": 1,
+            "title": "Increase physical activity",
+            "description": "Aim for 30 minutes of moderate exercise at least 4 days a week.",
+            "actions": ["Walk 30 mins", "Home cardio sessions", "Begin a light strength program"]
+        }
+    ]
+
+    result = {
+        "risk_level": risk_level,
+        "probability": round(prob, 3),
+        "confidence": 0.78,
+        "prediction_text": "This is a lifestyle screening estimate — not a clinical diagnosis.",
+        "recommendations": recommendations,
+        "input": data
+    }
+
+    # Try to persist into predictions table for unified history (non-fatal)
+    try:
+        conn = get_db_connection()
+        if conn:
+            cur = conn.cursor()
+            cur.execute(
+                """INSERT INTO predictions (user_id, prediction_result, probability, risk_level, input_data)
+                   VALUES (%s, %s, %s, %s, %s)""",
+                (user_id, 1 if prob >= 0.5 else 0, float(prob), risk_level, Json(result))
+            )
+            conn.commit()
+            cur.close()
+            conn.close()
+    except Exception as e:
+        print("Warning: failed to persist lifestyle assessment:", e)
+
+    return jsonify(result), 200
+
+
+# Save symptom log (SymptomTracker)
+@app.route("/lifestyle/save-symptom-log", methods=["POST"])
+@token_required
+def save_symptom_log(user_id):
+    data = request.json or {}
+    try:
+        conn = get_db_connection()
+        if not conn:
+            return jsonify({"ok": False, "message": "Database not available"}), 500
+
+        cur = conn.cursor()
+        cur.execute(
+            "INSERT INTO symptom_logs (user_id, log_data) VALUES (%s, %s)",
+            (user_id, Json(data))
+        )
+        conn.commit()
+        cur.close()
+        conn.close()
+        return jsonify({"ok": True, "message": "Symptom log saved"}), 200
+    except Exception as e:
+        print("save_symptom_log DB error:", e)
+        return jsonify({"ok": False, "message": "Failed to save symptom log"}), 500
+
+
+# Lifestyle prediction history endpoint (frontend expects { predictions: [...] })
+@app.route("/lifestyle/prediction-history", methods=["GET"])
+@token_required
+def lifestyle_prediction_history(user_id):
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({"predictions": []}), 200
+
+    try:
+        cur = conn.cursor(cursor_factory=RealDictCursor)
+        # Fetch predictions for the user (we stored lifestyle assess result in input_data)
+        cur.execute("""
+            SELECT id, probability, risk_level, input_data, created_at
+            FROM predictions
+            WHERE user_id=%s
+            ORDER BY created_at DESC
+        """, (user_id,))
+        rows = cur.fetchall()
+        cur.close()
+        conn.close()
+
+        mapped = []
+        for r in rows:
+            input_data = r.get("input_data") or {}
+            if isinstance(input_data, dict) and "prediction_text" in input_data:
+                mapped_item = {
+                    "id": r.get("id"),
+                    "risk_level": r.get("risk_level") or input_data.get("risk_level"),
+                    "probability": r.get("probability") or input_data.get("probability"),
+                    "confidence": input_data.get("confidence"),
+                    "prediction_text": input_data.get("prediction_text"),
+                    "recommendations": input_data.get("recommendations") or [],
+                    "risk_score": r.get("probability") or input_data.get("probability"),
+                    "risk_factors": input_data.get("risk_factors"),
+                    "created_at": r.get("created_at"),
+                    "input": input_data.get("input") or input_data
+                }
+            else:
+                mapped_item = {
+                    "id": r.get("id"),
+                    "risk_level": r.get("risk_level"),
+                    "probability": r.get("probability"),
+                    "created_at": r.get("created_at"),
+                    "input": input_data
+                }
+            mapped.append(mapped_item)
+
+        return jsonify({"predictions": mapped}), 200
+
+    except Exception as e:
+        print("lifestyle_prediction_history error:", e)
+        return jsonify({"predictions": []}), 200
+
+
+# Replace /predictions/history with frontend-friendly output (returns "predictions" key)
+@app.route("/predictions/history", methods=["GET"])
+@token_required
+def predictions_history_for_frontend(user_id):
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({'predictions': []}), 200
+
+    try:
+        cur = conn.cursor(cursor_factory=RealDictCursor)
+        cur.execute("SELECT id, user_id, prediction_result, probability, risk_level, input_data, created_at FROM predictions WHERE user_id=%s ORDER BY created_at DESC", (user_id,))
+        rows = cur.fetchall()
+        cur.close()
+        conn.close()
+
+        mapped = []
+        for r in rows:
+            mapped.append({
+                "id": r.get("id"),
+                "prediction_result": r.get("prediction_result"),
+                "probability": r.get("probability"),
+                "risk_level": r.get("risk_level"),
+                "input_data": r.get("input_data"),
+                "created_at": r.get("created_at")
+            })
+
+        return jsonify({"predictions": mapped}), 200
+    except Exception as e:
+        print("predictions/history DB error:", e)
+        return jsonify({'predictions': []}), 200
+
+# ---------- End pasted block ----------
 
 # ---------------- START (local dev) ----------------
 if __name__ == "__main__":
