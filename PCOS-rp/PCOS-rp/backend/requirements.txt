@@ -2,7 +2,7 @@ flask
 flask-cors
 joblib
 numpy
-scikit-learn
+scikit-learn==1.7.1
 pandas
 psycopg2-binary
 PyJWT
