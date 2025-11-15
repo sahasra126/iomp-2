@@ -13,8 +13,12 @@ export const AuthProvider = ({ children }) => {
 
   // Validate token and fetch user
   const fetchCurrentUser = async (token) => {
-    if (!token) return null;
+    if (!token) {
+      return null;
+    }
+
     try {
+      setLoading(true); // start loading while validating token
       const res = await fetch(`${API_BASE}/auth/me`, {
         method: 'GET',
         headers: {
@@ -42,13 +46,22 @@ export const AuthProvider = ({ children }) => {
       console.error('[Auth] fetchCurrentUser error', err);
       setUser(null);
       return null;
+    } finally {
+      setLoading(false); // validation finished
     }
   };
 
   // Restore token on startup and validate
   useEffect(() => {
-    const token = localStorage.getItem('pcos_token');
-    if (token) fetchCurrentUser(token);
+    (async () => {
+      const token = localStorage.getItem('pcos_token');
+      if (token) {
+        await fetchCurrentUser(token);
+      } else {
+        // ensure loading is false when there's no token
+        setLoading(false);
+      }
+    })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
