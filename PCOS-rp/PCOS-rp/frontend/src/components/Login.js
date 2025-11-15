@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 
 export default function Login() {
   const { login } = useAuth();
-  const navigate = useNavigate?.() || (() => {});
+  const navigate = useNavigate(); // <-- correct usage
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
@@ -20,18 +20,29 @@ export default function Login() {
     }
 
     setBusy(true);
-    const res = await login(email, password);
-    setBusy(false);
+    try {
+      const res = await login(email, password);
+      console.log("[Login] login result:", res);
 
-    if (res.success) {
-      // Navigate to homepage or wherever
-      try {
-        navigate("/");
-      } catch (err) {
-        // If router not present, ignore
+      if (res && res.success) {
+        // prefer a protected page — change path if you want a different landing
+        const target = "/"; // or "/lifestyle-assessment"
+        try {
+          navigate(target);
+        } catch (err) {
+          // fallback if navigate fails for any reason
+          console.warn("[Login] navigate failed, falling back to full reload:", err);
+          window.location.href = target;
+        }
+      } else {
+        // show backend error message (if present)
+        setError(res?.error || "Login failed");
       }
-    } else {
-      setError(res.error || "Login failed");
+    } catch (err) {
+      console.error("[Login] unexpected error", err);
+      setError("An unexpected error occurred. Please try again.");
+    } finally {
+      setBusy(false);
     }
   };
 
