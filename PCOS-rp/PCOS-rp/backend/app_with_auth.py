@@ -15,8 +15,9 @@ app = Flask(__name__)
 # ---------------- CORS ----------------
 # Use your actual frontend origins in production.
 FRONTEND_ORIGINS = [
-    "https://iomp-2.vercel.app",
-    "https://iomp-2-knlko6wgi-sahas-projects-905bce4f.vercel.app"
+  "https://iomp-2.vercel.app",
+    "https://iomp-2-knlko6wgi-sahas-projects-905bce4f.vercel.app",
+    "https://iomp-2-git-main-sahas-projects-905bce4f.vercel.app"
 ]
 
 CORS(
