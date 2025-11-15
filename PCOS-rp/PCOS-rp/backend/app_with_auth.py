@@ -452,11 +452,28 @@ from functools import wraps
 
 app = Flask(__name__)
 # Enable CORS for testing. Replace "*" with your Vercel URL in production.
-from flask_cors import CORS
-# CORS(app, origins="*", supports_credentials=True)
-CORS(app, origins=["https://iomp-2-git-main-sahas-projects-905bce4f.vercel.app"], supports_credentials=True)
+# from flask_cors import CORS
+# CORS(app, origins=["https://iomp-2-git-main-sahas-projects-905bce4f.vercel.app"], supports_credentials=True)
 
-app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'your-secret-key-change-this')
+# app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'your-secret-key-change-this')
+# near top of file, after `app = Flask(__name__)`
+from flask_cors import CORS
+
+# Use your actual frontend origin here (copy-paste exactly from browser address bar)
+FRONTEND_ORIGINS = [
+    "https://iomp-2.vercel.app",
+    "https://iomp-2-knlko6wgi-sahas-projects-905bce4f.vercel.app"  # optional: add any preview URLs you use
+]
+
+# Strict/secure: allow only your frontend origins
+CORS(
+    app,
+    resources={r"/*": {"origins": FRONTEND_ORIGINS}},
+    supports_credentials=True,
+    allow_headers=["Content-Type", "Authorization", "Access-Control-Allow-Origin"],
+    expose_headers=["Content-Type", "Authorization"]
+)
+
 
 # Database Configuration
 DB_CONFIG = {
