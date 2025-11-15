@@ -1,73 +1,62 @@
-import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import './Login.css';
+// context/AuthContext.jsx
+import React, { createContext, useContext, useState, useEffect } from 'react';
 
-const Login = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+const AuthContext = createContext();
+
+export const useAuth = () => useContext(AuthContext);
+
+export const AuthProvider = ({ children }) => {
+  const [user, setUser] = useState(null); // or token
   const [loading, setLoading] = useState(false);
-  const { login } = useAuth();
-  const navigate = useNavigate();
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError('');
-    setLoading(true);
-
-    const result = await login(email, password);
-
-    if (result.success) {
-      navigate('/predict');
-    } else {
-      setError(result.error);
+  useEffect(() => {
+    // Try to restore user from localStorage (demo only).
+    const token = localStorage.getItem('pcos_token');
+    if (token) {
+      // optionally validate token with backend
+      setUser({ token }); 
     }
-    setLoading(false);
+  }, []);
+
+  const login = async (email, password) => {
+    setLoading(true);
+    try {
+      // Example fetch - adapt URL and payload to your backend
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        return { success: false, error: errData.message || `Login failed (${res.status})` };
+      }
+
+      const data = await res.json();
+      // Suppose backend returns { token, user }
+      if (data?.token) {
+        localStorage.setItem('pcos_token', data.token); // demo only
+        setUser(data.user || { token: data.token });
+        return { success: true };
+      } else {
+        return { success: false, error: 'Invalid response from server' };
+      }
+    } catch (err) {
+      return { success: false, error: err.message || 'Network error' };
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const logout = () => {
+    localStorage.removeItem('pcos_token');
+    setUser(null);
   };
 
   return (
-    <div className="auth-container">
-      <div className="auth-card">
-        <h2>Login to PCOS Predictor</h2>
-        <form onSubmit={handleSubmit}>
-          <div className="form-group">
-            <label htmlFor="email">Email</label>
-            <input
-              type="email"
-              id="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="Enter your email"
-              required
-            />
-          </div>
-          
-          <div className="form-group">
-            <label htmlFor="password">Password</label>
-            <input
-              type="password"
-              id="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Enter your password"
-              required
-            />
-          </div>
-
-          {error && <div className="error-message">{error}</div>}
-
-          <button type="submit" className="auth-button" disabled={loading}>
-            {loading ? 'Logging in...' : 'Login'}
-          </button>
-        </form>
-
-        <div className="auth-footer">
-          <p>Don't have an account? <Link to="/register">Register here</Link></p>
-        </div>
-      </div>
-    </div>
+    <AuthContext.Provider value={{ user, login, logout, loading }}>
+      {children}
+    </AuthContext.Provider>
   );
 };
-
-export default Login;
