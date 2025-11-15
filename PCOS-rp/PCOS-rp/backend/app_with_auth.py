@@ -9,24 +9,52 @@ import os
 from datetime import datetime, timedelta
 import jwt
 from functools import wraps
+# --- CORS helper (paste near top, after app is created) ---
+from flask import request, make_response
 
-app = Flask(__name__)
-
-# ---------------- CORS ----------------
-# Use your actual frontend origins in production.
-FRONTEND_ORIGINS = [
-  "https://iomp-2.vercel.app",
+ALLOWED_ORIGINS = {
+    "https://iomp-2.vercel.app",
     "https://iomp-2-knlko6wgi-sahas-projects-905bce4f.vercel.app",
     "https://iomp-2-git-main-sahas-projects-905bce4f.vercel.app"
-]
+}
 
-CORS(
-    app,
-    resources={r"/*": {"origins": FRONTEND_ORIGINS}},
-    supports_credentials=True,
-    allow_headers=["Content-Type", "Authorization", "Access-Control-Allow-Origin"],
-    expose_headers=["Content-Type", "Authorization"]
-)
+@app.after_request
+def add_cors_headers(response):
+    origin = request.headers.get("Origin")
+    if origin and origin in ALLOWED_ORIGINS:
+        response.headers["Access-Control-Allow-Origin"] = origin
+        response.headers["Vary"] = "Origin"
+        response.headers["Access-Control-Allow-Credentials"] = "true"
+        response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization, Accept"
+        response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS"
+    return response
+
+# Ensure OPTIONS preflight requests return an explicit OK response
+@app.route('/', defaults={'path': ''}, methods=['OPTIONS'])
+@app.route('/<path:path>', methods=['OPTIONS'])
+def handle_options(path=''):
+    resp = make_response('', 200)
+    # add_cors_headers will run and attach headers
+    return resp
+# --- end CORS helper ---
+
+# app = Flask(__name__)
+
+# # ---------------- CORS ----------------
+# # Use your actual frontend origins in production.
+# FRONTEND_ORIGINS = [
+#   "https://iomp-2.vercel.app",
+#     "https://iomp-2-knlko6wgi-sahas-projects-905bce4f.vercel.app",
+#     "https://iomp-2-git-main-sahas-projects-905bce4f.vercel.app"
+# ]
+
+# CORS(
+#     app,
+#     resources={r"/*": {"origins": FRONTEND_ORIGINS}},
+#     supports_credentials=True,
+#     allow_headers=["Content-Type", "Authorization", "Access-Control-Allow-Origin"],
+#     expose_headers=["Content-Type", "Authorization"]
+# )
 
 # ---------------- SECRET KEY (JWT) ----------------
 # Ensure SECRET_KEY is available for JWT encoding/decoding.
