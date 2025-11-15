@@ -1,5 +1,5 @@
 # app_with_auth.py
-from flask import Flask, request, jsonify, make_response
+from flask import Flask, request, jsonify, make_response, Response
 from flask_cors import CORS
 import joblib
 import numpy as np
@@ -16,7 +16,6 @@ app = Flask(__name__)
 
 # ---------------- CONFIG ----------------
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'your-secret-key-change-me')
-# Optional: set to False in production if you want silence
 app.config['PROPAGATE_EXCEPTIONS'] = True
 
 # ---------------- CORS ----------------
@@ -25,6 +24,13 @@ ALLOWED_ORIGINS = {
     "https://iomp-2-knlko6wgi-sahas-projects-905bce4f.vercel.app",
     "https://iomp-2-git-main-sahas-projects-905bce4f.vercel.app"
 }
+
+# --- FIX: Ensure preflight OPTIONS is handled before auth decorators run ---
+@app.before_request
+def handle_preflight():
+    if request.method == 'OPTIONS':
+        # Return an empty response so browser preflight succeeds.
+        return make_response('', 200)
 
 # Keep lightweight custom CORS so we control credentials and vary header
 @app.after_request
@@ -38,7 +44,8 @@ def add_cors_headers(response):
         response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS"
     return response
 
-# Ensure OPTIONS preflight requests return OK
+# (Optional) keep explicit OPTIONS catch-all routes — not required because of before_request,
+# but harmless and sometimes useful for health checks from load balancers.
 @app.route('/', defaults={'path': ''}, methods=['OPTIONS'])
 @app.route('/<path:path>', methods=['OPTIONS'])
 def handle_options(path=''):
@@ -151,6 +158,10 @@ except Exception as e:
 def token_required(f):
     @wraps(f)
     def wrapper(*args, **kwargs):
+        # Allow preflight requests to pass through without token
+        if request.method == 'OPTIONS':
+            return make_response('', 200)
+
         header = request.headers.get("Authorization", "")
         if not header:
             return jsonify({"error": "Token missing"}), 401
@@ -187,7 +198,7 @@ def home():
 @app.route("/auth/register", methods=["POST"])
 def register():
     data = request.json or {}
-    email = data.get("email")
+    email = (data.get("email") or "").strip().lower()
     password = data.get("password")
     full_name = data.get("full_name", "")
 
@@ -232,7 +243,6 @@ def register():
         app.config["SECRET_KEY"],
         algorithm="HS256"
     )
-    # pyjwt >=2 returns str; if bytes, decode
     if isinstance(token, bytes):
         token = token.decode('utf-8')
 
@@ -241,7 +251,7 @@ def register():
 @app.route("/auth/login", methods=["POST"])
 def login():
     data = request.json or {}
-    email = data.get("email")
+    email = (data.get("email") or "").strip().lower()
     password = data.get("password")
 
     if not email or not password:
