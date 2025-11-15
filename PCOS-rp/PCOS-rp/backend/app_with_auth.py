@@ -453,7 +453,8 @@ from functools import wraps
 app = Flask(__name__)
 # Enable CORS for testing. Replace "*" with your Vercel URL in production.
 from flask_cors import CORS
-CORS(app, origins="*", supports_credentials=True)
+# CORS(app, origins="*", supports_credentials=True)
+CORS(app, origins=["https://iomp-2-git-main-sahas-projects-905bce4f.vercel.app"], supports_credentials=True)
 
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'your-secret-key-change-this')
 
