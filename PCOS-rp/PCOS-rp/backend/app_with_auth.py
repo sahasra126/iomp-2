@@ -1,4 +1,5 @@
-from flask import Flask, request, jsonify
+# app_with_auth.py
+from flask import Flask, request, jsonify, make_response
 from flask_cors import CORS
 import joblib
 import numpy as np
@@ -9,15 +10,23 @@ import os
 from datetime import datetime, timedelta
 import jwt
 from functools import wraps
-# --- CORS helper (paste near top, after app is created) ---
-from flask import request, make_response
 
+# ---------------- APP ----------------
+app = Flask(__name__)
+
+# ---------------- CONFIG ----------------
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'your-secret-key-change-me')
+# Optional: set to False in production if you want silence
+app.config['PROPAGATE_EXCEPTIONS'] = True
+
+# ---------------- CORS ----------------
 ALLOWED_ORIGINS = {
     "https://iomp-2.vercel.app",
     "https://iomp-2-knlko6wgi-sahas-projects-905bce4f.vercel.app",
     "https://iomp-2-git-main-sahas-projects-905bce4f.vercel.app"
 }
 
+# Keep lightweight custom CORS so we control credentials and vary header
 @app.after_request
 def add_cors_headers(response):
     origin = request.headers.get("Origin")
@@ -29,39 +38,13 @@ def add_cors_headers(response):
         response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS"
     return response
 
-# Ensure OPTIONS preflight requests return an explicit OK response
+# Ensure OPTIONS preflight requests return OK
 @app.route('/', defaults={'path': ''}, methods=['OPTIONS'])
 @app.route('/<path:path>', methods=['OPTIONS'])
 def handle_options(path=''):
-    resp = make_response('', 200)
-    # add_cors_headers will run and attach headers
-    return resp
-# --- end CORS helper ---
+    return make_response('', 200)
 
-# app = Flask(__name__)
-
-# # ---------------- CORS ----------------
-# # Use your actual frontend origins in production.
-# FRONTEND_ORIGINS = [
-#   "https://iomp-2.vercel.app",
-#     "https://iomp-2-knlko6wgi-sahas-projects-905bce4f.vercel.app",
-#     "https://iomp-2-git-main-sahas-projects-905bce4f.vercel.app"
-# ]
-
-# CORS(
-#     app,
-#     resources={r"/*": {"origins": FRONTEND_ORIGINS}},
-#     supports_credentials=True,
-#     allow_headers=["Content-Type", "Authorization", "Access-Control-Allow-Origin"],
-#     expose_headers=["Content-Type", "Authorization"]
-# )
-
-# ---------------- SECRET KEY (JWT) ----------------
-# Ensure SECRET_KEY is available for JWT encoding/decoding.
-# Set SECRET_KEY as an environment variable in Render for production.
-app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'your-secret-key-change-this')
-
-# ---------------- Database Configuration ----------------
+# ---------------- DATABASE CONFIG ----------------
 DB_CONFIG = {
     'host': os.environ.get('DB_HOST', 'localhost'),
     'database': os.environ.get('DB_NAME', 'pcos_db'),
@@ -73,7 +56,6 @@ DB_CONFIG = {
 DATABASE_URL = os.environ.get("DATABASE_URL")
 if DATABASE_URL:
     try:
-        # Parse DATABASE_URL to DB_CONFIG without extra dependencies
         from urllib.parse import urlparse, unquote
         url = urlparse(DATABASE_URL)
         DB_CONFIG = {
@@ -87,27 +69,25 @@ if DATABASE_URL:
     except Exception as e:
         print("Failed to parse DATABASE_URL:", e)
 
-# ---------------- Load Model, Scaler and Features ----------------
+# ---------------- MODEL LOADING ----------------
+model = scaler = None
+feature_names = []
+
 try:
     model = joblib.load("pcos_model.pkl")
     scaler = joblib.load("pcos_scaler.pkl")
     feature_names = joblib.load("feature_names.pkl")
-
-    # Convert feature_names safely to list
     try:
         feature_names = feature_names.tolist()
-    except:
+    except Exception:
         feature_names = list(feature_names)
-
     print("✅ Model loaded with features:", feature_names)
-
 except Exception as e:
-    print("❌ Failed to load model:", e)
+    print("❌ Failed to load model or features on startup:", e)
     model, scaler, feature_names = None, None, []
 
-# ---------------- DB helper functions ----------------
+# ---------------- DB HELPERS ----------------
 def get_db_connection():
-    """Create a connection to PostgreSQL using DB_CONFIG."""
     try:
         conn = psycopg2.connect(**DB_CONFIG)
         return conn
@@ -116,16 +96,13 @@ def get_db_connection():
         return None
 
 def init_db():
-    """Initialize users and predictions tables (safe to call multiple times)."""
     conn = get_db_connection()
     if not conn:
         print("init_db: no DB connection available")
         return
-
     cur = None
     try:
         cur = conn.cursor()
-
         cur.execute("""
             CREATE TABLE IF NOT EXISTS users (
                 id SERIAL PRIMARY KEY,
@@ -136,7 +113,6 @@ def init_db():
                 last_login TIMESTAMP
             )
         """)
-
         cur.execute("""
             CREATE TABLE IF NOT EXISTS predictions (
                 id SERIAL PRIMARY KEY,
@@ -148,14 +124,12 @@ def init_db():
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         """)
-
         conn.commit()
         print("✅ Database ready (tables ensured)")
     except Exception as e:
         print("❌ DB Init Error:", e)
         try:
-            if conn:
-                conn.rollback()
+            conn.rollback()
         except:
             pass
     finally:
@@ -167,41 +141,41 @@ def init_db():
         except:
             pass
 
-# Attempt to initialize DB at import/startup time (works for Gunicorn/Render)
+# safe to call at import/startup
 try:
     init_db()
 except Exception as e:
-    # Log but do not crash the app if initialization fails
     print("Warning: init_db failed on import:", e)
 
-# ---------------- JWT TOKEN CHECKER ----------------
+# ---------------- AUTH DECORATOR ----------------
 def token_required(f):
     @wraps(f)
     def wrapper(*args, **kwargs):
-        token = request.headers.get("Authorization")
-
-        if not token:
+        header = request.headers.get("Authorization", "")
+        if not header:
             return jsonify({"error": "Token missing"}), 401
 
+        token = header
+        if header.startswith("Bearer "):
+            token = header.split(" ", 1)[1]
+
         try:
-            if token.startswith("Bearer "):
-                token = token.replace("Bearer ", "")
-
             decoded = jwt.decode(token, app.config["SECRET_KEY"], algorithms=["HS256"])
-            user_id = decoded["user_id"]
-
+            user_id = decoded.get("user_id")
+            if not user_id:
+                return jsonify({"error": "Invalid token payload"}), 401
         except jwt.ExpiredSignatureError:
             return jsonify({"error": "Token expired"}), 401
         except jwt.InvalidTokenError:
             return jsonify({"error": "Invalid token"}), 401
-        except Exception:
+        except Exception as e:
+            print("Token decode error:", e)
             return jsonify({"error": "Invalid or expired token"}), 401
 
         return f(user_id, *args, **kwargs)
-
     return wrapper
 
-# ------------------- ROUTES ----------------------------
+# ---------------- ROUTES ----------------
 @app.route("/", methods=["GET"])
 def home():
     return jsonify({
@@ -210,7 +184,6 @@ def home():
         "status": "ready" if model else "model_not_loaded"
     })
 
-# ------------------- REGISTER ----------------------------
 @app.route("/auth/register", methods=["POST"])
 def register():
     data = request.json or {}
@@ -234,7 +207,6 @@ def register():
             return jsonify({"error": "Email already registered"}), 409
 
         password_hash = generate_password_hash(password)
-
         cur.execute(
             "INSERT INTO users (email, password_hash, full_name) VALUES (%s, %s, %s) RETURNING id",
             (email, password_hash, full_name)
@@ -260,10 +232,12 @@ def register():
         app.config["SECRET_KEY"],
         algorithm="HS256"
     )
+    # pyjwt >=2 returns str; if bytes, decode
+    if isinstance(token, bytes):
+        token = token.decode('utf-8')
 
     return jsonify({"message": "Registration successful", "token": token}), 201
 
-# ------------------- LOGIN ----------------------------
 @app.route("/auth/login", methods=["POST"])
 def login():
     data = request.json or {}
@@ -295,10 +269,11 @@ def login():
         app.config["SECRET_KEY"],
         algorithm="HS256"
     )
+    if isinstance(token, bytes):
+        token = token.decode('utf-8')
 
     return jsonify({"message": "Login successful", "token": token}), 200
 
-# ------------------- PREDICT ----------------------------
 @app.route("/predict", methods=["POST"])
 @token_required
 def predict(user_id):
@@ -306,8 +281,6 @@ def predict(user_id):
         return jsonify({"error": "Model not loaded"}), 500
 
     data = request.json or {}
-
-    # Ensure all required features are provided
     try:
         values = [data[f] for f in feature_names]
     except KeyError as e:
@@ -316,10 +289,9 @@ def predict(user_id):
 
     X = np.array([values])
     X_scaled = scaler.transform(X)
-
     pred = model.predict(X_scaled)[0]
     probs = model.predict_proba(X_scaled)[0]
-    p_pcos = probs[1]
+    p_pcos = float(probs[1])
 
     if p_pcos < 0.3:
         risk = "Low"
@@ -328,7 +300,6 @@ def predict(user_id):
     else:
         risk = "High"
 
-    # Save prediction
     conn = get_db_connection()
     if conn:
         try:
@@ -351,7 +322,6 @@ def predict(user_id):
         "input": data
     })
 
-# ------------------- HISTORY ----------------------------
 @app.route("/predictions/history", methods=["GET"])
 @token_required
 def history(user_id):
@@ -371,15 +341,12 @@ def history(user_id):
 
     return jsonify({"history": rows})
 
-# ------------------- FEATURES INFO ----------------------------
 @app.route("/features", methods=["GET"])
 def get_features():
     return jsonify({"features": feature_names})
 
-# ------------------- HEALTH CHECK ----------------------------
 @app.route("/health", methods=["GET"])
 def health():
-    # Quick DB check
     db_conn = get_db_connection()
     db_connected = db_conn is not None
     if db_conn:
@@ -387,7 +354,6 @@ def health():
             db_conn.close()
         except:
             pass
-
     return jsonify({
         "status": "healthy",
         "model_loaded": model is not None,
@@ -395,8 +361,7 @@ def health():
         "database_connected": db_connected
     })
 
-# ------------------- START APP (for local dev) ----------------------------
+# ---------------- START (local dev) ----------------
 if __name__ == "__main__":
-    # Local startup ensures DB too
     init_db()
     app.run(port=5000, debug=True)
