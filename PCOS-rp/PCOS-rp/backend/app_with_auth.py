@@ -19,37 +19,40 @@ app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'your-secret-key-change-
 app.config['PROPAGATE_EXCEPTIONS'] = True
 
 # ---------------- CORS ----------------
+# ---------------- CORS ----------------
 ALLOWED_ORIGINS = {
     "https://iomp-2.vercel.app",
     "https://iomp-2-knlko6wgi-sahas-projects-905bce4f.vercel.app",
     "https://iomp-2-git-main-sahas-projects-905bce4f.vercel.app"
 }
 
-# --- FIX: Ensure preflight OPTIONS is handled before auth decorators run ---
+# Use flask_cors to reliably handle preflight and attach headers
+# (we still allow a manual attach helper for any explicit responses)
+CORS(
+    app,
+    origins=list(ALLOWED_ORIGINS),
+    supports_credentials=True,
+    allow_headers=["Content-Type", "Authorization", "Accept"],
+    methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+)
+
+from flask import request
+def attach_cors_headers(resp):
+    origin = request.headers.get("Origin")
+    if origin and origin in ALLOWED_ORIGINS:
+        resp.headers["Access-Control-Allow-Origin"] = origin
+        resp.headers["Vary"] = "Origin"
+        resp.headers["Access-Control-Allow-Credentials"] = "true"
+        resp.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization, Accept"
+        resp.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS"
+    return resp
+
+# Make sure preflight returns headers if something else intercepts OPTIONS
 @app.before_request
 def handle_preflight():
     if request.method == 'OPTIONS':
-        # Return an empty response so browser preflight succeeds.
-        return make_response('', 200)
-
-# Keep lightweight custom CORS so we control credentials and vary header
-@app.after_request
-def add_cors_headers(response):
-    origin = request.headers.get("Origin")
-    if origin and origin in ALLOWED_ORIGINS:
-        response.headers["Access-Control-Allow-Origin"] = origin
-        response.headers["Vary"] = "Origin"
-        response.headers["Access-Control-Allow-Credentials"] = "true"
-        response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization, Accept"
-        response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS"
-    return response
-
-# (Optional) keep explicit OPTIONS catch-all routes — not required because of before_request,
-# but harmless and sometimes useful for health checks from load balancers.
-@app.route('/', defaults={'path': ''}, methods=['OPTIONS'])
-@app.route('/<path:path>', methods=['OPTIONS'])
-def handle_options(path=''):
-    return make_response('', 200)
+        resp = make_response('', 200)
+        return attach_cors_headers(resp)
 
 # ---------------- DATABASE CONFIG ----------------
 DB_CONFIG = {
