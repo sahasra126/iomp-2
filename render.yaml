@@ -72,10 +72,10 @@ services:
 
   # Backend API (dynamic web service)
   - type: web
+    runtime: python
     name: pcos-backend
-    env: python
     region: oregon
-    plan: starter        # use a valid plan for web services (starter/standard/pro etc)
+    plan: starter               # use starter (or another valid web plan)
     buildCommand: cd backend && pip install -r requirements.txt
     startCommand: cd backend && gunicorn app:app --bind 0.0.0.0:$PORT
     envVars:
@@ -107,10 +107,11 @@ services:
         value: production
     healthCheckPath: /health
 
-  # Frontend (React) — correctly declared as a static service
-  - type: static
+  # Frontend (React) — static site declaration
+  - type: web
+    runtime: static            # <- critical: static runtime
     name: pcos-frontend
-    plan: free
+    plan: free                 # static sites support free
     buildCommand: cd frontend && npm install && npm run build
     staticPublishPath: frontend/build
     routes:
@@ -119,5 +120,6 @@ services:
         destination: /index.html
     envVars:
       - key: REACT_APP_API_URL
-        value: https://pcos-backend.onrender.com  # update if your backend URL differs
+        value: https://pcos-backend.onrender.com
+
 
