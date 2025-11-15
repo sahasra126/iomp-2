@@ -64,18 +64,18 @@
 #     user: pcos_user
 #     plan: free
 services:
-  # PostgreSQL Database (existing Render database reference)
+  # PostgreSQL Database (free tier)
   - type: pserv
     name: pcos-database
     env: docker
     plan: free
 
-  # Backend API (dynamic web service)
+  # Backend API (free web service)
   - type: web
     runtime: python
     name: pcos-backend
     region: oregon
-    plan: starter               # use starter (or another valid web plan)
+    plan: free
     buildCommand: cd backend && pip install -r requirements.txt
     startCommand: cd backend && gunicorn app:app --bind 0.0.0.0:$PORT
     envVars:
@@ -107,11 +107,11 @@ services:
         value: production
     healthCheckPath: /health
 
-  # Frontend (React) — static site declaration
+  # Frontend (React) – free static site
   - type: web
-    runtime: static            # <- critical: static runtime
+    runtime: static
     name: pcos-frontend
-    plan: free                 # static sites support free
+    plan: free
     buildCommand: cd frontend && npm install && npm run build
     staticPublishPath: frontend/build
     routes:
