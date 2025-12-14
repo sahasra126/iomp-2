@@ -13,25 +13,38 @@ from functools import wraps
 
 # ---------------- APP ----------------
 app = Flask(__name__)
+def cors_origin_validator(origin):
+    if not origin:
+        return False
+    return (
+        origin.endswith(".vercel.app") or
+        origin == "http://localhost:3000"
+    )
+
+CORS(
+    app,
+    supports_credentials=True,
+    origins=cors_origin_validator
+)
 
 # ---------------- CONFIG ----------------
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'your-secret-key-change-me')
 app.config['PROPAGATE_EXCEPTIONS'] = True
 
-ALLOWED_ORIGINS = [
-    "http://localhost:3000",
-    "https://iompdeploy2.vercel.app",
-    "https://iompdeploy2-git-main-sahas-projects-905bce4f.vercel.app",
-    "https://iompdeploy2-jaj17l7v6-sahas-projects-905bce4f.vercel.app"
-]
+# ALLOWED_ORIGINS = [
+#     "http://localhost:3000",
+#     "https://iompdeploy2.vercel.app",
+#     "https://iompdeploy2-git-main-sahas-projects-905bce4f.vercel.app",
+#     "https://iompdeploy2-jaj17l7v6-sahas-projects-905bce4f.vercel.app"
+# ]
 
 
 
-CORS(
-    app,
-    resources={r"/*": {"origins": ALLOWED_ORIGINS}},
-    supports_credentials=True
-)
+# CORS(
+#     app,
+#     resources={r"/*": {"origins": ALLOWED_ORIGINS}},
+#     supports_credentials=True
+# )
 # ---------------- CORS ----------------
 # ---------------- CORS ----------------
 # ALLOWED_ORIGINS = {
