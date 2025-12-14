@@ -26,13 +26,19 @@ ALLOWED_ORIGINS = [
     "https://iompdeploy2-jaj17l7v6-sahas-projects-905bce4f.vercel.app"
 ]
 
-
-
 CORS(
     app,
-    resources={r"/*": {"origins": ALLOWED_ORIGINS}},
-    supports_credentials=True
+    resources={r"/*": {"origins": "*"}},
+    supports_credentials=True,
+    allow_headers=["Content-Type", "Authorization"],
+    methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"]
 )
+
+# CORS(
+#     app,
+#     resources={r"/*": {"origins": ALLOWED_ORIGINS}},
+#     supports_credentials=True
+# )
 # ---------------- CORS ----------------
 # ---------------- CORS ----------------
 # ALLOWED_ORIGINS = {
