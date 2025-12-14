@@ -23,7 +23,10 @@ app.config['PROPAGATE_EXCEPTIONS'] = True
 ALLOWED_ORIGINS = {
     "https://iomp-2.vercel.app",
     "https://iomp-2-knlko6wgi-sahas-projects-905bce4f.vercel.app",
-    "https://iomp-2-git-main-sahas-projects-905bce4f.vercel.app"
+    "https://iomp-2-git-main-sahas-projects-905bce4f.vercel.app",
+    "https://iomp-2-ldlx-8zpxrb2hh-sahas-projects-905bce4f.vercel.app",
+    "https://iomp-2-ldlx-git-patch-1-sahas-projects-905bce4f.vercel.app",
+    "https://iomp-2-ldlx.vercel.app"
 }
 
 # Use flask_cors to reliably handle preflight and attach headers
