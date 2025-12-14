@@ -12,7 +12,8 @@ import jwt
 from functools import wraps
 
 # ---------------- APP ----------------
-
+# ---------------- APP ----------------
+app = Flask(__name__)
 
 # ---------------- CONFIG ----------------
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'your-secret-key-change-me')
@@ -51,16 +52,16 @@ CORS(
     methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"]
 )
 
-from flask import request
-def attach_cors_headers(resp):
-    origin = request.headers.get("Origin")
-    if origin and origin in ALLOWED_ORIGINS:
-        resp.headers["Access-Control-Allow-Origin"] = origin
-        resp.headers["Vary"] = "Origin"
-        resp.headers["Access-Control-Allow-Credentials"] = "true"
-        resp.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization, Accept"
-        resp.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS"
-    return resp
+# from flask import request
+# def attach_cors_headers(resp):
+#     origin = request.headers.get("Origin")
+#     if origin and origin in ALLOWED_ORIGINS:
+#         resp.headers["Access-Control-Allow-Origin"] = origin
+#         resp.headers["Vary"] = "Origin"
+#         resp.headers["Access-Control-Allow-Credentials"] = "true"
+#         resp.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization, Accept"
+#         resp.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS"
+#     return resp
 
 # # Make sure preflight returns headers if something else intercepts OPTIONS
 # @app.before_request
