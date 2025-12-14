@@ -135,10 +135,10 @@ const AuthContext = createContext();
 export const useAuth = () => useContext(AuthContext);
 
 // API base (use env var in production)
-const API_BASE = process.env.REACT_APP_BACKEND_URL;
+// const API_BASE = process.env.REACT_APP_BACKEND_URL;
 
 //1st deploy correct
-// const API_BASE = process.env.REACT_APP_BACKEND_URL || 'https://pcos-backend-bj1v.onrender.com';
+const API_BASE = process.env.REACT_APP_BACKEND_URL || 'https://pcos-backend-bj1v.onrender.com';
 
 // const API_BASE = process.env.REACT_APP_API_URL || 'https://pcos-backend-krz0.onrender.com';
 
