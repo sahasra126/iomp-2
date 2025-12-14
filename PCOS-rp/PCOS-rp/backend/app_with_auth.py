@@ -17,45 +17,52 @@ app = Flask(__name__)
 # ---------------- CONFIG ----------------
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'your-secret-key-change-me')
 app.config['PROPAGATE_EXCEPTIONS'] = True
+ALLOWED_ORIGINS = [
+    "http://localhost:3000",
+    "https://iompdeploy2.vercel.app"
+]
 
-# ---------------- CORS ----------------
-# ---------------- CORS ----------------
-ALLOWED_ORIGINS = {
-    "https://iomp-2.vercel.app",
-    "https://iomp-2-knlko6wgi-sahas-projects-905bce4f.vercel.app",
-    "https://iomp-2-git-main-sahas-projects-905bce4f.vercel.app",
-    "https://iomp-2-ldlx-8zpxrb2hh-sahas-projects-905bce4f.vercel.app",
-    "https://iomp-2-ldlx-git-patch-1-sahas-projects-905bce4f.vercel.app",
-    "https://iomp-2-ldlx.vercel.app"
-}
-
-# Use flask_cors to reliably handle preflight and attach headers
-# (we still allow a manual attach helper for any explicit responses)
 CORS(
     app,
-    origins=list(ALLOWED_ORIGINS),
-    supports_credentials=True,
-    allow_headers=["Content-Type", "Authorization", "Accept"],
-    methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+    resources={r"/*": {"origins": ALLOWED_ORIGINS}},
+    supports_credentials=True
 )
+# ---------------- CORS ----------------
+# ---------------- CORS ----------------
+# ALLOWED_ORIGINS = {
+#     "https://iomp-2.vercel.app",
+#     "https://iomp-2-knlko6wgi-sahas-projects-905bce4f.vercel.app",
+#     "https://iomp-2-git-main-sahas-projects-905bce4f.vercel.app",
+# "https://iompdeploy2.vercel.app"
+# }
 
-from flask import request
-def attach_cors_headers(resp):
-    origin = request.headers.get("Origin")
-    if origin and origin in ALLOWED_ORIGINS:
-        resp.headers["Access-Control-Allow-Origin"] = origin
-        resp.headers["Vary"] = "Origin"
-        resp.headers["Access-Control-Allow-Credentials"] = "true"
-        resp.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization, Accept"
-        resp.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS"
-    return resp
+# # Use flask_cors to reliably handle preflight and attach headers
+# # (we still allow a manual attach helper for any explicit responses)
+# CORS(
+#     app,
+#     origins=list(ALLOWED_ORIGINS),
+#     supports_credentials=True,
+#     allow_headers=["Content-Type", "Authorization", "Accept"],
+#     methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+# )
 
-# Make sure preflight returns headers if something else intercepts OPTIONS
-@app.before_request
-def handle_preflight():
-    if request.method == 'OPTIONS':
-        resp = make_response('', 200)
-        return attach_cors_headers(resp)
+# from flask import request
+# def attach_cors_headers(resp):
+#     origin = request.headers.get("Origin")
+#     if origin and origin in ALLOWED_ORIGINS:
+#         resp.headers["Access-Control-Allow-Origin"] = origin
+#         resp.headers["Vary"] = "Origin"
+#         resp.headers["Access-Control-Allow-Credentials"] = "true"
+#         resp.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization, Accept"
+#         resp.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS"
+#     return resp
+
+# # Make sure preflight returns headers if something else intercepts OPTIONS
+# @app.before_request
+# def handle_preflight():
+#     if request.method == 'OPTIONS':
+#         resp = make_response('', 200)
+#         return attach_cors_headers(resp)
 
 # ---------------- DATABASE CONFIG ----------------
 DB_CONFIG = {
