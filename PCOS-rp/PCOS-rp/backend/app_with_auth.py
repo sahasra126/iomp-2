@@ -19,12 +19,12 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'your-secret-key-change-me')
 app.config['PROPAGATE_EXCEPTIONS'] = True
 
-ALLOWED_ORIGINS = [
-    "http://localhost:3000",
-    "https://iompdeploy2.vercel.app",
-    "https://iompdeploy2-git-main-sahas-projects-905bce4f.vercel.app",
-    "https://iompdeploy2-jaj17l7v6-sahas-projects-905bce4f.vercel.app"
-]
+# ALLOWED_ORIGINS = [
+#     "http://localhost:3000",
+#     "https://iompdeploy2.vercel.app",
+#     "https://iompdeploy2-git-main-sahas-projects-905bce4f.vercel.app",
+#     "https://iompdeploy2-jaj17l7v6-sahas-projects-905bce4f.vercel.app"
+# ]
 
 CORS(
     app,
@@ -50,13 +50,13 @@ CORS(
 
 # # Use flask_cors to reliably handle preflight and attach headers
 # # (we still allow a manual attach helper for any explicit responses)
-CORS(
-    app,
-    origins=list(ALLOWED_ORIGINS),
-    supports_credentials=True,
-    allow_headers=["Content-Type", "Authorization", "Accept"],
-    methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"]
-)
+# CORS(
+#     app,
+#     origins=list(ALLOWED_ORIGINS),
+#     supports_credentials=True,
+#     allow_headers=["Content-Type", "Authorization", "Accept"],
+#     methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+# )
 
 # from flask import request
 # def attach_cors_headers(resp):
