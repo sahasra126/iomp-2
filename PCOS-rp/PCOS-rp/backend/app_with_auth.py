@@ -18,8 +18,13 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'your-secret-key-change-me')
 app.config['PROPAGATE_EXCEPTIONS'] = True
 ALLOWED_ORIGINS = [
+ALLOWED_ORIGINS = [
     "http://localhost:3000",
-    "https://iompdeploy2.vercel.app"
+    "https://iompdeploy2.vercel.app",
+    "https://iompdeploy2-git-main-sahas-projects-905bce4f.vercel.app",
+    "https://iompdeploy2-jaj17l7v6-sahas-projects-905bce4f.vercel.app"
+]
+
 ]
 
 CORS(
