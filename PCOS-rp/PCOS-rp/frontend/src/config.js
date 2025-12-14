@@ -4,5 +4,12 @@
 
 // export default API_BASE_URL;
 // create this file (or update existing)
-const API_BASE = process.env.REACT_APP_BACKEND_URL || "https://pcos-backend-bj1v.onrender.com";
+// const API_BASE = process.env.REACT_APP_BACKEND_URL || "https://pcos-backend-bj1v.onrender.com";
+// export default API_BASE;
+const API_BASE = process.env.REACT_APP_BACKEND_URL;
+
+if (!API_BASE) {
+  throw new Error("REACT_APP_BACKEND_URL is not defined");
+}
+
 export default API_BASE;
