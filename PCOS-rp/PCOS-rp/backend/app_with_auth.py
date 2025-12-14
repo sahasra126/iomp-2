@@ -28,11 +28,11 @@ ALLOWED_ORIGINS = [
 
 
 
-# CORS(
-#     app,
-#     resources={r"/*": {"origins": ALLOWED_ORIGINS}},
-#     supports_credentials=True
-# )
+CORS(
+    app,
+    resources={r"/*": {"origins": ALLOWED_ORIGINS}},
+    supports_credentials=True
+)
 # ---------------- CORS ----------------
 # ---------------- CORS ----------------
 # ALLOWED_ORIGINS = {
