@@ -12,31 +12,18 @@ import jwt
 from functools import wraps
 
 # ---------------- APP ----------------
-app = Flask(__name__)
-def cors_origin_validator(origin):
-    if not origin:
-        return False
-    return (
-        origin.endswith(".vercel.app") or
-        origin == "http://localhost:3000"
-    )
 
-CORS(
-    app,
-    supports_credentials=True,
-    origins=cors_origin_validator
-)
 
 # ---------------- CONFIG ----------------
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'your-secret-key-change-me')
 app.config['PROPAGATE_EXCEPTIONS'] = True
 
-# ALLOWED_ORIGINS = [
-#     "http://localhost:3000",
-#     "https://iompdeploy2.vercel.app",
-#     "https://iompdeploy2-git-main-sahas-projects-905bce4f.vercel.app",
-#     "https://iompdeploy2-jaj17l7v6-sahas-projects-905bce4f.vercel.app"
-# ]
+ALLOWED_ORIGINS = [
+    "http://localhost:3000",
+    "https://iompdeploy2.vercel.app",
+    "https://iompdeploy2-git-main-sahas-projects-905bce4f.vercel.app",
+    "https://iompdeploy2-jaj17l7v6-sahas-projects-905bce4f.vercel.app"
+]
 
 
 
@@ -56,24 +43,24 @@ app.config['PROPAGATE_EXCEPTIONS'] = True
 
 # # Use flask_cors to reliably handle preflight and attach headers
 # # (we still allow a manual attach helper for any explicit responses)
-# CORS(
-#     app,
-#     origins=list(ALLOWED_ORIGINS),
-#     supports_credentials=True,
-#     allow_headers=["Content-Type", "Authorization", "Accept"],
-#     methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"]
-# )
+CORS(
+    app,
+    origins=list(ALLOWED_ORIGINS),
+    supports_credentials=True,
+    allow_headers=["Content-Type", "Authorization", "Accept"],
+    methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+)
 
-# from flask import request
-# def attach_cors_headers(resp):
-#     origin = request.headers.get("Origin")
-#     if origin and origin in ALLOWED_ORIGINS:
-#         resp.headers["Access-Control-Allow-Origin"] = origin
-#         resp.headers["Vary"] = "Origin"
-#         resp.headers["Access-Control-Allow-Credentials"] = "true"
-#         resp.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization, Accept"
-#         resp.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS"
-#     return resp
+from flask import request
+def attach_cors_headers(resp):
+    origin = request.headers.get("Origin")
+    if origin and origin in ALLOWED_ORIGINS:
+        resp.headers["Access-Control-Allow-Origin"] = origin
+        resp.headers["Vary"] = "Origin"
+        resp.headers["Access-Control-Allow-Credentials"] = "true"
+        resp.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization, Accept"
+        resp.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS"
+    return resp
 
 # # Make sure preflight returns headers if something else intercepts OPTIONS
 # @app.before_request
