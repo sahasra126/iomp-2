@@ -135,7 +135,9 @@ const AuthContext = createContext();
 export const useAuth = () => useContext(AuthContext);
 
 // API base (use env var in production)
-const API_BASE = process.env.REACT_APP_API_URL || 'https://pcos-backend-krz0.onrender.com';
+const API_BASE = process.env.REACT_APP_BACKEND_URL || 'https://pcos-backend-bj1v.onrender.com';
+
+// const API_BASE = process.env.REACT_APP_API_URL || 'https://pcos-backend-krz0.onrender.com';
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);      // user object from /auth/me
