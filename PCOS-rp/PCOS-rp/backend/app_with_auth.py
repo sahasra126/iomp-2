@@ -11,7 +11,9 @@ import jwt
 from functools import wraps
 
 app = Flask(__name__)
-CORS(app, supports_credentials=True, origins=["http://localhost:3000"])
+CORS(app, supports_credentials=True)
+
+# CORS(app, supports_credentials=True, origins=["http://localhost:3000"])
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'your-secret-key-change-this')
 
 # Database configuration
